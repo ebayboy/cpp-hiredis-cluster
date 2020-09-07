@@ -20,7 +20,7 @@ using std::endl;
 // custom connection function, which we will pass to the redis cluster library
 
 // our socket table in text format (it can be file)
-const char config[] =   "127.0.0.1:7000=/tmp/redis0.sock\n"
+const char config[] =   "127.0.0.1:6379=/tmp/redis0.sock\n"
 "127.0.0.1:7001=/tmp/redis1.sock\n"
 "127.0.0.1:7002=/tmp/redis2.sock\n";
 
@@ -72,10 +72,7 @@ void processUnixSocketCluster()
     redisReply * reply;
     
     // Second, pass our custom connection function
-    cluster_p = HiredisCommand<>::createCluster( "127.0.0.1",
-                                              7000,
-                                              static_cast<void*>( &table ),
-                                              customRedisConnect,
+    cluster_p = HiredisCommand<>::createCluster( "127.0.0.1", 6379, static_cast<void*>( &table ), customRedisConnect,
                                               redisFree );
     
     // That's all, we are ready to execute commands as usual

@@ -1,13 +1,9 @@
 #include <iostream>
+#include <event2/event.h>
 #include <signal.h>
 
-#include "adapters/hiredis-boostasio-adapter/boostasio.hpp"
-#include "adapters/boostasioadapter.h"  // for BoostAsioAdapter
+#include "adapters/libeventadapter.h"  // for LibeventAdapter
 #include "asynchirediscommand.h"
-
-#ifdef _WIN32
-#define SIGPIPE 13
-#endif
 
 using RedisCluster::AsyncHiredisCommand;
 using RedisCluster::Cluster;
@@ -20,7 +16,7 @@ using std::endl;
 
 typedef typename Cluster<redisAsyncContext>::ptr_t ClusterPtr;
 
-static void setCallback(ClusterPtr cluster_p,
+static void setCallback( ClusterPtr cluster_p,
     const redisReply &reply, const string &demoStr )
 {
     if( reply.type == REDIS_REPLY_STATUS  || reply.type == REDIS_REPLY_ERROR )
@@ -37,19 +33,14 @@ static void setCallback(ClusterPtr cluster_p,
 
 void processAsyncCommand()
 {
-    Cluster<redisAsyncContext>::ptr_t cluster_p;
+    ClusterPtr cluster_p;
     
-    boost::asio::io_service io_service;
-    RedisCluster::BoostAsioAdapter adapter( io_service );
-
-    /*loop forever, ever, even if there is no work queued*/
-    boost::asio::io_service::work forever(io_service);
-
-
     signal(SIGPIPE, SIG_IGN);
+    struct event_base *base = event_base_new();
+    RedisCluster::LibeventAdapter adapter( *base );
     string demoData("Demo data is ok");
     
-    cluster_p = AsyncHiredisCommand<>::createCluster( "127.0.0.1", 7000, adapter );
+    cluster_p = AsyncHiredisCommand<>::createCluster( "127.0.0.1", 6379, adapter );
     
     AsyncHiredisCommand<>::Command( cluster_p,
                                  "FOO",
@@ -59,8 +50,10 @@ void processAsyncCommand()
                                  "SET %s %s",
                                  "FOO",
                                  "BAR1");
-    io_service.run();
+    
+    event_base_dispatch(base);
     delete cluster_p;
+    event_base_free(base);
 }
 
 int main(int argc, const char * argv[])

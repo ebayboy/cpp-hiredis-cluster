@@ -64,7 +64,7 @@ void processAsyncCommand()
     string demoStr("Demo data is ok");
 
     LibeventAdapter adapter(*base);
-    cluster_p = AsyncHiredisCommand<>::createCluster("127.0.0.1", 7000, adapter);
+    cluster_p = AsyncHiredisCommand<>::createCluster("127.0.0.1", 6379, adapter);
     
     AsyncHiredisCommand<> &cmd = AsyncHiredisCommand<>::Command( cluster_p,
                                  "FOO5",
